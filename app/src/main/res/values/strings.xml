@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">FindUs</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="cancel">Map</string>
+    <string name="yes">Map</string>
+    <string name="no">Map</string>
+    <string name="confirmation_pause">Are you sure you want to pause the app?</string>
+    <string name="confirmation_start">Are you sure you want to start the app?</string>
+</resources>

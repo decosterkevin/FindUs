@@ -6,4 +6,5 @@
     <string name="no">Map</string>
     <string name="confirmation_pause">Are you sure you want to pause the app?</string>
     <string name="confirmation_start">Are you sure you want to start the app?</string>
+    <string name="title_activity_main">MainActivity</string>
 </resources>

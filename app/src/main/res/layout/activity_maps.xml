@@ -6,13 +6,4 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="decoster.findus.MapsActivity">
-
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/fab"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:layout_gravity="bottom|end"
-        map:srcCompat="@drawable/ic_pause_white_24dp">
-    </android.support.design.widget.FloatingActionButton>
 </fragment>

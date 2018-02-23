@@ -1,10 +1,16 @@
 <resources>
     <string name="app_name">FindUs</string>
     <string name="title_activity_maps">Map</string>
-    <string name="cancel">Map</string>
-    <string name="yes">Map</string>
-    <string name="no">Map</string>
+    <string name="cancel">Cancel</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
     <string name="confirmation_pause">Are you sure you want to pause the app?</string>
     <string name="confirmation_start">Are you sure you want to start the app?</string>
     <string name="title_activity_main">MainActivity</string>
+    <string name="customDial_title">Edit</string>
+    <string name="customDial_msg">Modify your visible state and user Id</string>
+    <string name="custom_Comment">State comment: </string>
+    <string name="custom_userId">User id: </string>
+    <string name="userId_defaultHint">Enter your visible id</string>
+    <string name="comment_defaultHint">Enter the state you want to share among peers</string>
 </resources>

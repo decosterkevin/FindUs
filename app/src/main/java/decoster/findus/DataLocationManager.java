@@ -57,8 +57,8 @@ public class DataLocationManager {
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 for (Location location : locationResult.getLocations()) {
-
-                    if(myLastLocation != null && myLastLocation.distanceTo(location) <= MIN_DISTANCE_UPDATE) {
+                    if(location != null) {
+                        Log.d("MainActivity", "pos");
                         myLastLocation = location;
                         mActivity.setPersoMarker(new LatLng(myLastLocation.getLatitude(), myLastLocation.getLongitude()));
 
@@ -74,8 +74,9 @@ public class DataLocationManager {
 
     @SuppressLint("MissingPermission")
     public void start()  {
-        Log.d("MainActivity", "start GPS");
+
         if(!gpsRequiered){
+            Log.d("MainActivity", "start GPS");
             mFusedLocationClient.requestLocationUpdates(mLocationRequest,mLocationCallback, null);
             gpsRequiered = true;
         }

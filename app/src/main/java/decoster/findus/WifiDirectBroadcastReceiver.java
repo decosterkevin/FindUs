@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.NetworkInfo;
 import android.net.wifi.p2p.WifiP2pManager;
+import android.util.Log;
 
 /**
  * Created by kevin on 22.02.18.
@@ -34,8 +35,10 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
 
             int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
             if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
+                Log.d("main", "wifi enable");
                 p2pHandler.onP2PStateReceive(true);
             } else {
+                Log.d("main", "wifi disable");
                 p2pHandler.onP2PStateReceive(false);
             }
 

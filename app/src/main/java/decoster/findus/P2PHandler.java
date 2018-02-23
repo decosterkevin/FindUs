@@ -9,6 +9,7 @@ import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.util.Log;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -24,16 +25,11 @@ public class P2PHandler implements  WifiP2pManager.PeerListListener, WifiP2pMana
     private int port = 8888;
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
-    private Server mServer;
-    private Client mClient;
     public P2PHandler(MapsActivity activity, WifiP2pManager mManager,WifiP2pManager.Channel mChannel) {
 
         this.mActivity = activity;
         this.mManager = mManager;
         this.mChannel =mChannel;
-
-        mClient = new Client();
-        mServer= null;
     }
 
     @Override
@@ -70,23 +66,28 @@ public class P2PHandler implements  WifiP2pManager.PeerListListener, WifiP2pMana
     }
     @Override
     public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
-        // InetAddress from WifiP2pInfo struct.
-        InetAddress groupOwnerAddress = wifiP2pInfo.groupOwnerAddress;
 
+        Thread handler = null;
         // After the group negotiation, we can determine the group owner
         // (server).
         if (wifiP2pInfo.groupFormed && wifiP2pInfo.isGroupOwner) {
             // Do whatever tasks are specific to the group owner.
             // One common case is creating a group owner thread and accepting
             // incoming connections.
-             mServer = (Server) new Server(port, numberOfPeers, mActivity).execute();
-        } else if (wifiP2pInfo.groupFormed) {
-            mServer.cancel(true);
-            mClient.send(groupOwnerAddress ,port,mActivity.getInfoToSend());
+            Log.d(MapsActivity.TAG, "Connected as group owner");
+            try {
 
-            // The other device acts as the peer (client). In this case,
-            // you'll want to create a peer thread that connects
-            // to the group owner.
+                handler = new GroupOwnerSocketHandler(mActivity);
+                handler.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        } else if (wifiP2pInfo.groupFormed) {
+            Log.d(MapsActivity.TAG, "Connected as peer");
+            handler = new ClientSocketHandler(mActivity,
+                    wifiP2pInfo.groupOwnerAddress);
+            handler.start();
         }
     }
 

@@ -16,6 +16,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -88,7 +89,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
         mapFragment.setHasOptionsMenu(true);
-
+        peersInfo.put("test", new Info(1, "fd", new LatLng(0,0),"sdgsd"));
         CreateEditDialog(true);
     }
 
@@ -199,6 +200,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         switch (item.getItemId()) {
             case R.id.switchId:
                 return true;
+            case R.id.searchItem:
+                Menu menu = (Menu) findViewById(R.id.menuPeople);
+                int i =0;
+                for(Info info: peersInfo.values()) {
+
+                    menu.add(0, i, Menu.NONE, info.getUserId());
+                    i++;
+                }
             case R.id.changeState:
                 CreateEditDialog(false);
                 return true;
@@ -331,7 +340,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            mMap.setMyLocationEnabled(true);
+            //mMap.setMyLocationEnabled(true);
         }
 
 
@@ -342,11 +351,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             MarkerOptions a = new MarkerOptions()
                     .position(pos);
             myMarker = mMap.addMarker(a);
+            //Move the camera to the user's location and zoom in!
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(myMarker.getPosition(), 17.0f));
         }
         else {
             myMarker.setPosition(pos);
 
         }
+
 
     }
 

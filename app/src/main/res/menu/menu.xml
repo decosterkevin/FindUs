@@ -3,6 +3,23 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".MainActivity" >
+    <item
+        android:id="@+id/searchItem"
+        android:icon="@android:drawable/ic_menu_search"
+        android:title=""
+        app:showAsAction="always">
+        <menu
+            android:id="@+id/menuPeople">
+            <item
+                android:id="@+id/airport"
+                app:showAsAction="always|withText"
+                android:title="Airport"/>
+            <item
+                android:id="@+id/atm"
+                app:showAsAction="always|withText"
+                android:title="Atm"/>
+        </menu>
+    </item>
     <item android:id="@+id/changeState"
         android:icon="@android:drawable/ic_menu_edit"
         android:title="Snych"

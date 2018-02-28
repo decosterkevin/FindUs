@@ -11,8 +11,21 @@
         android:theme="@style/AppTheme.AppBarOverlay">
 
     </android.support.design.widget.AppBarLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-    <include layout="@layout/content_main" />
+        <android.support.v7.widget.RecyclerView
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:scrollbars="vertical"
+            android:orientation="vertical"
+            android:id="@+id/listsUsers"
+            android:visibility="gone"></android.support.v7.widget.RecyclerView>
+        <include layout="@layout/content_main" />
+    </LinearLayout>
+
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/centerCamera"
         android:layout_width="wrap_content"

@@ -14,11 +14,30 @@ class Info {
     private String id;
     private String userId;
     private LatLng position;
+    private String status;
+
+
     public Info(long timestamp, String id, LatLng position, String userId) {
         this.userId = userId;
         this.timestamp = timestamp;
         this.id = id;
         this.position = position;
+        this.status= "nnn";
+    }
+    public Info(long timestamp, String id, LatLng position, String userId, String status) {
+        this.userId = userId;
+        this.timestamp = timestamp;
+        this.id = id;
+        this.position = position;
+        this.status = status;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
     public long getTimestamp() {
         return timestamp;

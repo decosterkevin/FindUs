@@ -1,26 +1,5 @@
-package decoster.findus;
+package decoster.findus.backgroundP2p;
 
-import android.content.ContentResolver;
-import android.net.Uri;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.util.Map;
-
-/**
- * Created by kevin on 22.02.18.
- */
-import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
@@ -28,12 +7,19 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import decoster.findus.activity.MapsActivity;
+
+/**
+ * Created by kevin on 22.02.18.
+ */
+
 public class ClientSocketHandler extends Thread {
 
     private static final String TAG = "ClientSocketHandler";
     private MapsActivity handler;
     private SessionManager session;
     private InetAddress mAddress;
+
     public ClientSocketHandler(MapsActivity handler, InetAddress groupOwnerAddress) {
         this.handler = handler;
         this.mAddress = groupOwnerAddress;
@@ -44,8 +30,7 @@ public class ClientSocketHandler extends Thread {
         Socket socket = new Socket();
         try {
             socket.bind(null);
-            socket.connect(new InetSocketAddress(mAddress.getHostAddress(),
-                    handler.SOCKET_PORT), 5000);
+            socket.connect(new InetSocketAddress(mAddress.getHostAddress(), handler.SOCKET_PORT), 5000);
             Log.d(TAG, "Launching the I/O handler");
             session = new SessionManager(socket, handler, false);
             new Thread(session).start();
@@ -74,9 +59,9 @@ public class Client {
         try {
             */
 /**
-             * Create a client socket with the host,
-             * port, and timeout information.
-             *//*
+ * Create a client socket with the host,
+ * port, and timeout information.
+ *//*
 
             socket.bind(null);
             socket.connect((new InetSocketAddress(host, port)), 500);

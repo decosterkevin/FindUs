@@ -1,4 +1,4 @@
-package decoster.findus;
+package decoster.findus.backgroundP2p;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -17,8 +17,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
     private WifiP2pManager.Channel mChannel;
     private P2PHandler p2pHandler;
 
-    public WifiDirectBroadcastReceiver(WifiP2pManager manager, WifiP2pManager.Channel channel,
-                                       P2PHandler p2pHandler) {
+    public WifiDirectBroadcastReceiver(WifiP2pManager manager, WifiP2pManager.Channel channel, P2PHandler p2pHandler) {
         super();
         this.mManager = manager;
         this.mChannel = channel;
@@ -58,8 +57,7 @@ public class WifiDirectBroadcastReceiver extends BroadcastReceiver {
                 return;
             }
 
-            NetworkInfo networkInfo = (NetworkInfo) intent
-                    .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+            NetworkInfo networkInfo = (NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
 
             if (networkInfo.isConnected()) {
                 // We are connected with the other device, request connection

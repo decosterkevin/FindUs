@@ -1,14 +1,16 @@
-package decoster.findus;
+package decoster.findus.activity;
 
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
@@ -23,14 +25,19 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Switch;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -38,11 +45,17 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
+import decoster.findus.Manifest;
+import decoster.findus.R;
+import decoster.findus.backgroundP2p.P2PHandler;
+import decoster.findus.backgroundP2p.WifiDirectBroadcastReceiver;
+import decoster.findus.controller.CustomAdapter;
+import decoster.findus.controller.DataLocationManager;
+import decoster.findus.model.Peer;
+import decoster.findus.utility.Utilities;
 import pl.tajchert.nammu.Nammu;
 import pl.tajchert.nammu.PermissionCallback;
 
@@ -54,12 +67,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public final static String TAG = "MAIN";
     public final static int SOCKET_PORT = 8888;
     private final static int UPDATE_TIME = 1000;
+    private final Random random = new Random();
 
     //Google map api
     private GoogleMap mMap;
-    private Marker myMarker = null;
 
-    //Intend broadcasting
+    //P2P communication handler
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
     private BroadcastReceiver mReceiver;
@@ -70,59 +83,43 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private DataLocationManager myLocationDataManager;
 
     //device's user datas
-    private String deviceID;
-    private String userID;
-    private String stateComment;
-
-    //Dataset
-    private ConcurrentHashMap<String, Marker> peersMarkers = new ConcurrentHashMap<>();
-    private List<Info> peersInfo = Collections.synchronizedList(new ArrayList<Info>());
+    private Peer userPeer;
+    private ConcurrentHashMap<String, Peer> peers = new ConcurrentHashMap<>();
 
     //UI elements
     private Switch switchAB;
     private RecyclerView mRecyclerView;
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
+    private ProgressBar progressBar;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+        progressBar = (ProgressBar) findViewById(R.id.login_progress);
+        progressBar.setVisibility(View.VISIBLE);
+
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        String tmpUserId = sharedPref.getString("userID", null);
+        if (tmpUserId == null) {
+            finish();
+        } else {
+            userPeer = new Peer(Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID), tmpUserId);
+        }
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
+        peers.put("fd", new Peer("fd", "sdgsd", new LatLng(0, 0), 0, null, null));
+        peers.put("fd1", new Peer("fd1", "sdgsd20", new LatLng(50, 20), 0, null, null));
+        peers.put("fd3", new Peer("fd3", "sdgsd453", new LatLng(40, 60), 0, null, null));
         //Initalize background processes
-        init();
 
-        //UI elements initialization
-        FloatingActionButton repositionCamera = (FloatingActionButton) this.findViewById(R.id.centerCamera);
-        repositionCamera.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (myMarker != null) {
-                    mMap.moveCamera(CameraUpdateFactory.newLatLng(myMarker.getPosition()));
-                }
-            }
-        });
+        initBackProcess();
 
-        mapFragment.setHasOptionsMenu(true);
 
-        peersInfo.add(new Info(1, "fd", new LatLng(0, 0), "sdgsd"));
-        peersInfo.add(new Info(10, "fd1", new LatLng(50, 20), "sdgsd20"));
-        peersInfo.add(new Info(1, "fd3", new LatLng(40, 60), "sdgsd453"));
-        CreateEditDialog(true);
-
-        mRecyclerView = (RecyclerView) findViewById(R.id.listsUsers);
-        mRecyclerView.setHasFixedSize(true);
-
-        mLayoutManager = new LinearLayoutManager(this);
-        mRecyclerView.setLayoutManager(mLayoutManager);
-
-        mAdapter = new CustomAdapter(peersInfo, mMap);
-        mRecyclerView.setAdapter(mAdapter);
-        mRecyclerView.setItemAnimator(new DefaultItemAnimator());
-        //mRecyclerView.addItemDecoration(new RecyclerViewDecorator(this));
     }
 
     //START IMPLEMENTED METHODS
@@ -142,7 +139,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onStart() {
         super.onStart();
-        startBroadcast();
+        //startBroadcast();
     }
 
     @Override
@@ -154,7 +151,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        stopBroadcast();
+        //stopBroadcast();
 
     }
 
@@ -193,7 +190,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
                 return true;
             case R.id.changeState:
-                CreateEditDialog(false);
+                createEditDialog();
                 return true;
             default:
                 // If we got here, the user's action was not recognized.
@@ -218,19 +215,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             //mMap.setMyLocationEnabled(true);
         }
+
+        initUI();
     }
 
+    @Override
+    public void onBackPressed() {
+    }
     //END IMPLEMENTED METHODS
 
-
-    /**
-     * Initialize the marker onto the map fragment given the
-     * initial database state
-     * Use for debugging
-     */
-    private void initMarkers() {
-
-    }
 
     /**
      * Initalize all background processes:
@@ -238,7 +231,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
      * -P2Phandler
      * -GPS data manager
      */
-    private void init() {
+    private void initBackProcess() {
 
         mManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         mChannel = mManager.initialize(this, getMainLooper(), null);
@@ -258,9 +251,57 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         myLocationDataManager = new DataLocationManager(this, (LocationManager) getSystemService(Context.LOCATION_SERVICE));
         myLocationDataManager.init();
 
-        deviceID = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
         myLocationDataManager.start();
+
+    }
+
+    private void initUI() {
+        //UI elements initialization
+        FloatingActionButton repositionCamera = (FloatingActionButton) this.findViewById(R.id.centerCamera);
+        repositionCamera.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (userPeer.getMarker() != null) {
+                    mMap.animateCamera(CameraUpdateFactory.newLatLng(userPeer.getPosition()));
+                }
+            }
+        });
+
+        FloatingActionButton focusMarker = (FloatingActionButton) this.findViewById(R.id.centerMarkers);
+        focusMarker.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (userPeer != null) {
+                    LatLngBounds.Builder builderBound = new LatLngBounds.Builder();
+                    for (Peer peer : peers.values()) {
+                        builderBound.include(peer.getPosition());
+                    }
+                    LatLngBounds bound = builderBound.build();
+
+                    CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bound, 20);
+                    mMap.animateCamera(cu);
+                }
+            }
+        });
+
+        mRecyclerView = (RecyclerView) findViewById(R.id.listsUsers);
+        mRecyclerView.setHasFixedSize(true);
+
+        mLayoutManager = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(mLayoutManager);
+
+        mAdapter = new CustomAdapter(peers, mMap);
+        mRecyclerView.setAdapter(mAdapter);
+        mRecyclerView.setItemAnimator(new DefaultItemAnimator());
+
+        //mRecyclerView.addItemDecoration(new RecyclerViewDecorator(this));
+        for (Peer peer : peers.values()) {
+
+            Marker tmp = createMarker(peer.getId(), peer.getUserId(), peer.getTimestamp(), peer.getPosition());
+            peer.setMarker(tmp);
+
+        }
+
+        progressBar.setVisibility(View.GONE);
 
     }
 
@@ -301,10 +342,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     /**
      * Create a customize Dialog that ask the user to change its visible user id and its
      * current mood state
-     *
-     * @param isInitialization If true, the user cannot leave the userId field blank
      */
-    private void CreateEditDialog(final boolean isInitialization) {
+    private void createEditDialog() {
 
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(MapsActivity.this);
         alertDialog.setTitle(R.string.customDial_title);
@@ -313,37 +352,41 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         View input = inflater.inflate(R.layout.custom_layout, null);
         alertDialog.setView(input); // uncomment this line
 
-        final EditText tx1 = (EditText) input.findViewById(R.id.editUserId);
-        final EditText tx2 = (EditText) input.findViewById(R.id.editComment);
-        String hint1 = isInitialization ? MapsActivity.this.getResources().getString(R.string.userId_defaultHint) : userID;
-        String hint2 = isInitialization ? MapsActivity.this.getResources().getString(R.string.comment_defaultHint) : stateComment;
-        tx1.setHint(hint1);
-        tx2.setHint(hint2);
+        final EditText txt = (EditText) input.findViewById(R.id.editComment);
 
         alertDialog.setPositiveButton(MapsActivity.this.getResources().getString(R.string.yes), (dialog, which) -> {
-            String tmp2 = tx2.getText().toString();
-            String finalComment = tmp2.equals("") ? stateComment : tmp2;
+            String tmp = txt.getText().toString();
+            String finalComment = tmp.matches("") ? userPeer.getStatus() : tmp;
 
-            String tmp1 = tx1.getText().toString();
-            String finalUserID = tmp1.equals("") ? userID : tmp1;
-
-            //if tmp1 not null, change the field
-            //Could have use dataBinding
-            if (tmp1 != null) {
-                userID = finalUserID;
-                stateComment = finalComment;
-                if (isInitialization) {
-
-                }
-                dialog.dismiss();
-            }
+            userPeer.setStatus(finalComment);
+            dialog.dismiss();
 
         });
-        if (!isInitialization) {
-            alertDialog.setNegativeButton(MapsActivity.this.getResources().getString(R.string.cancel), (dialog, which) -> dialog.dismiss());
-        }
-
+        alertDialog.setNegativeButton(MapsActivity.this.getResources().getString(R.string.cancel), (dialog, which) -> dialog.dismiss());
         alertDialog.show();
+    }
+
+
+    private Marker createMarker(String id, String title, Long timestamp, LatLng point) {
+
+        BitmapDescriptor bitmapDescriptor = BitmapDescriptorFactory.defaultMarker(random.nextFloat() * 360.0f);
+        Marker marker = mMap.addMarker(new MarkerOptions().position(point).icon(bitmapDescriptor).title(title).snippet(Utilities.getDateToString(timestamp)));
+        return marker;
+    }
+
+    /**
+     * Concatenate the current user state, given by its Id, last submitted position and timestamp
+     * with the maintained list of heard User infos, as JSONArray
+     *
+     * @return the formed JSONArray to be broadcast through wifi
+     */
+    public JSONArray getInfoToSend() {
+        JSONArray res = new JSONArray();
+        res.put(userPeer.toJson());
+        for (Peer peer : peers.values()) {
+            res.put(peer.toJson());
+        }
+        return res;
     }
 
     /**
@@ -352,7 +395,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
      *
      * @param arrays The data to be analyzed
      */
-    private void handleJSONArrayUpdate(JSONArray arrays) {
+    public void handleJSONArrayUpdate(JSONArray arrays) {
         for (int i = 0; i < arrays.length(); i++) {
             try {
                 addOrSetPeersMarker(arrays.getJSONObject(i));
@@ -363,31 +406,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-
-    /**
-     * Concatenate the current user state, given by its Id, last submitted position and timestamp
-     * with the maintained list of heard User infos, as JSONArray
-     *
-     * @return the formed JSONArray to be broadcast through wifi
-     */
-    public JSONArray getInfoToSend() {
-        JSONArray res = new JSONArray();
-        Location lastLoc = myLocationDataManager.getMyLastLocation();
-        JSONObject myJson = new Info(lastLoc.getTime(), deviceID, new LatLng(lastLoc.getLatitude(), lastLoc.getLongitude()), userID).toJson();
-        res.put(myJson);
-        for (Info info : peersInfo) {
-            res.put(info.toJson());
-        }
-        return res;
-    }
-
-
     /**
      * Create a new user or modify an existing one given a JSONObject submitted by another peer
      *
      * @param data The JsonObject to be analyzed
      */
-    public void addOrSetPeersMarker(JSONObject data) {
+    private void addOrSetPeersMarker(JSONObject data) {
 
 
         try {
@@ -395,30 +419,24 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             String id = data.getString("id");
             String userId = data.getString("userId");
             LatLng pos = new LatLng(data.getDouble("lat"), data.getDouble("lon"));
-            String dateStr = Utilities.getDateToString(timestamp);
-            Info user = Utilities.getUser(id, peersInfo);
+
+            Peer user = peers.get(id);
 
             //User exists, modify it
             if (user != null) {
-                Marker m = peersMarkers.get(id);
                 if (user.getTimestamp() < timestamp) {
                     //update info
                     user.setPosition(pos);
                     user.setTimestamp(timestamp);
-                    //update marker
-                    m.setPosition(pos);
-                    m.setSnippet("last update " + dateStr);
                 }
-
             }
             //User does not exist: create one
             else {
-                Info info = new Info(timestamp, id, pos, userId);
-                peersInfo.add(info);
+                Marker marker = createMarker(id, userId, timestamp, pos);
+                Peer peer = new Peer(id, userId, pos, timestamp, null, marker);
+                peers.put(id, peer);
 
-                MarkerOptions a = new MarkerOptions().position(pos).title(userId).snippet("last update " + dateStr);
-                Marker tmp = mMap.addMarker(a);
-                peersMarkers.put(id, tmp);
+
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -433,14 +451,18 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
      *
      * @param pos the position received from the callback
      */
-    public void setPersoMarker(LatLng pos) {
-        if (myMarker == null) {
-            MarkerOptions a = new MarkerOptions().position(pos);
-            myMarker = mMap.addMarker(a);
+    public void setPersoMarker(Location pos) {
+
+        userPeer.updateLocation(pos);
+        LatLng point = new LatLng(pos.getLatitude(), pos.getLongitude());
+        if (userPeer.getMarker() == null) {
+
+            MarkerOptions a = new MarkerOptions().position(point);
+            userPeer.setMarker(mMap.addMarker(a));
             //Move the camera to the user's location and zoom in!
-            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(myMarker.getPosition(), 17.0f));
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(userPeer.getPosition(), 17.0f));
         } else {
-            myMarker.setPosition(pos);
+            userPeer.setPosition(point);
 
         }
 

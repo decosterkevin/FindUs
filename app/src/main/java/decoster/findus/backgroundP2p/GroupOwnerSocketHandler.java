@@ -1,26 +1,5 @@
-package decoster.findus;
+package decoster.findus.backgroundP2p;
 
-import android.os.AsyncTask;
-import android.util.Log;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-
-/**
- * Created by kevin on 22.02.18.
- */
-
-
-import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
@@ -29,16 +8,26 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import decoster.findus.activity.MapsActivity;
+
+/**
+ * Created by kevin on 22.02.18.
+ */
+
 /**
  * The implementation of a ServerSocket handler. This is used by the wifi p2p
  * group owner.
  */
 public class GroupOwnerSocketHandler extends Thread {
 
-    ServerSocket socket = null;
-    private final int THREAD_COUNT = 10;
-    private MapsActivity handler;
     private static final String TAG = "GroupOwnerSocketHandler";
+    private final int THREAD_COUNT = 10;
+    /**
+     * A ThreadPool for client sockets.
+     */
+    private final ThreadPoolExecutor pool = new ThreadPoolExecutor(THREAD_COUNT, THREAD_COUNT, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+    ServerSocket socket = null;
+    private MapsActivity handler;
 
     public GroupOwnerSocketHandler(MapsActivity handler) throws IOException {
         try {
@@ -53,13 +42,6 @@ public class GroupOwnerSocketHandler extends Thread {
 
     }
 
-    /**
-     * A ThreadPool for client sockets.
-     */
-    private final ThreadPoolExecutor pool = new ThreadPoolExecutor(
-            THREAD_COUNT, THREAD_COUNT, 10, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<Runnable>());
-
     @Override
     public void run() {
         while (true) {
@@ -71,8 +53,7 @@ public class GroupOwnerSocketHandler extends Thread {
 
             } catch (IOException e) {
                 try {
-                    if (socket != null && !socket.isClosed())
-                        socket.close();
+                    if (socket != null && !socket.isClosed()) socket.close();
                 } catch (IOException ioe) {
 
                 }

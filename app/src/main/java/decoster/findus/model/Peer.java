@@ -1,35 +1,47 @@
-package decoster.findus;
+package decoster.findus.model;
+
+import android.location.Location;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import decoster.findus.utility.Utilities;
 
 /**
  * Created by kevin on 22.02.18.
  */
 
-class Info {
+public class Peer {
     private long timestamp;
     private String id;
     private String userId;
     private LatLng position;
     private String status;
+    private Marker marker;
 
-
-    public Info(long timestamp, String id, LatLng position, String userId) {
+    public Peer(String id, String userId) {
         this.userId = userId;
-        this.timestamp = timestamp;
         this.id = id;
-        this.position = position;
-        this.status= "nnn";
     }
-    public Info(long timestamp, String id, LatLng position, String userId, String status) {
+
+    public Peer(String id, String userId, LatLng position, long timestamp, String status, Marker marker) {
         this.userId = userId;
         this.timestamp = timestamp;
         this.id = id;
         this.position = position;
         this.status = status;
+        this.marker = marker;
+    }
+
+    public Marker getMarker() {
+        return marker;
+    }
+
+    public void setMarker(Marker marker) {
+        this.marker = marker;
     }
 
     public String getStatus() {
@@ -39,12 +51,15 @@ class Info {
     public void setStatus(String status) {
         this.status = status;
     }
+
     public long getTimestamp() {
         return timestamp;
     }
 
     public void setTimestamp(long timestamp) {
+
         this.timestamp = timestamp;
+        this.marker.setSnippet("last update " + Utilities.getDateToString(timestamp));
     }
 
     public String getId() {
@@ -61,8 +76,10 @@ class Info {
 
     public void setPosition(LatLng position) {
         this.position = position;
+        marker.setPosition(position);
     }
-    public JSONObject toJson(){
+
+    public JSONObject toJson() {
 
         JSONObject json = new JSONObject();
 
@@ -79,6 +96,9 @@ class Info {
         }
 
     }
-
-
+    
+    public void updateLocation(Location pos) {
+        this.position = new LatLng(pos.getLatitude(), pos.getLongitude());
+        this.timestamp = pos.getTime();
+    }
 }

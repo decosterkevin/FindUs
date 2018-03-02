@@ -13,4 +13,10 @@
     <string name="custom_userId">User id: </string>
     <string name="userId_defaultHint">Enter your visible id</string>
     <string name="comment_defaultHint">Enter the state you want to share among peers</string>
+    <string name="title_activity_login">Sign in</string>
+
+    <!-- Strings related to login -->
+    <string name="prompt_userID">User id</string>
+    <string name="action_signin">Lets go</string>
+    <string name="userComment">comment</string>
 </resources>

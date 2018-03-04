@@ -7,7 +7,7 @@
         android:id="@+id/toggleBtn1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:title="state: "
         android:textOff="start"
-        android:textOn="pause"/>
+        android:textOn="pause"
+        android:title="state: " />
 </RelativeLayout>

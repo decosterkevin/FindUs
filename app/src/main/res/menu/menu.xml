@@ -1,19 +1,17 @@
-<menu
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context=".MainActivity" >
+    tools:context=".MainActivity">
     <item
         android:id="@+id/searchItem"
         android:icon="@android:drawable/ic_menu_search"
         android:title=""
-        app:showAsAction="always">
-    </item>
-    <item android:id="@+id/changeState"
+        app:showAsAction="always"></item>
+    <item
+        android:id="@+id/changeState"
         android:icon="@android:drawable/ic_menu_edit"
         android:title="Snych"
-        app:showAsAction="always"
-        />
+        app:showAsAction="always" />
     <item
         android:id="@+id/switchId"
         android:enabled="true"

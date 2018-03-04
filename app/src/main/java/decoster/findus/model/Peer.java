@@ -96,7 +96,7 @@ public class Peer {
         }
 
     }
-    
+
     public void updateLocation(Location pos) {
         this.position = new LatLng(pos.getLatitude(), pos.getLongitude());
         this.timestamp = pos.getTime();

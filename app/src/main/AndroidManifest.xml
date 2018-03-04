@@ -39,10 +39,11 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
+
         <activity
             android:name=".activity.LoginActivity"
-            android:label="@string/title_activity_login"
-            android:configChanges="keyboardHidden|orientation">
+            android:configChanges="keyboardHidden|orientation"
+            android:label="@string/title_activity_login">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -52,8 +53,7 @@
         <activity
             android:name=".activity.MapsActivity"
             android:configChanges="keyboardHidden|orientation"
-            android:label="@string/title_activity_maps">
-        </activity>
+            android:label="@string/title_activity_maps"></activity>
 
     </application>
 
